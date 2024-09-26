@@ -25,13 +25,27 @@ $result = $stmt->get_result();
 </head>
 <body class="bg-gray-100">
     <div class="container mx-auto mt-10 px-4">
+        <?php
+        if (isset($_GET['message']) && isset($_GET['status'])) {
+            $message = htmlspecialchars($_GET['message']);
+            $status = htmlspecialchars($_GET['status']);
+            $alertClass = $status === 'success' ? 'bg-green-100 border-green-500 text-green-700' : 
+                          ($status === 'error' ? 'bg-red-100 border-red-500 text-red-700' : 
+                          'bg-yellow-100 border-yellow-500 text-yellow-700');
+            
+            echo "<div class='mb-4 border-l-4 p-4 {$alertClass}' role='alert'>";
+            echo "<p>{$message}</p>";
+            echo "</div>";
+        }
+        ?>
+
         <div class="bg-gradient-to-r from-blue-700 via-sky-500 to-gray-600 text-white p-6 rounded-lg shadow-lg mb-6 flex justify-between items-center">
             <h1 class="text-3xl font-bold">Usuários Cadastrados</h1>
             <div class="space-x-4">
-                <a href="index.php" class="text-white px-4 py-2 rounded-lg transition duration-300 ease-in-out">
+                <a href="index.php" class="bg-green-500 text-white px-4 py-2 rounded-lg transition duration-300 ease-in-out hover:bg-green-600">
                     Página Inicial
                 </a>
-                <a href="sair.php" class="text-white px-4 py-2 rounded-lg transition duration-300 ease-in-out hover:bg-red-600">
+                <a href="sair.php" class="bg-red-500 text-white px-4 py-2 rounded-lg transition duration-300 ease-in-out hover:bg-red-600">
                     Sair
                 </a>
             </div>
@@ -68,7 +82,8 @@ $result = $stmt->get_result();
                                     </form>
                                     <form action='del_user.php' method='POST' class='inline-block ml-2'>
                                         <input type='hidden' name='cpf' value='{$cpf}'>
-                                        <button type='submit' class='py-1 px-3 bg-red-500 hover:bg-red-600 text-white rounded transition duration-300' onclick="return confirm('Tem certeza que deseja excluir este usuário?')">Excluir</button>
+                                        <input type='hidden' name='name' value='{$name}'>
+                                        <button type='submit' class='py-1 px-3 text-white rounded transition duration-300' onclick="return confirm('Tem certeza que deseja excluir este usuário?')">Excluir</button>
                                     </form>
                                 </td>
                             </tr>
