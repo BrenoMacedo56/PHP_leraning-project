@@ -27,18 +27,28 @@ $result = $stmt->get_result();
     <div class="container mx-auto mt-10 px-4">
         <div class="bg-gradient-to-r from-blue-700 via-sky-500 to-gray-600 text-white p-6 rounded-lg shadow-lg mb-6 flex justify-between items-center">
             <h1 class="text-3xl font-bold">Usuários Cadastrados</h1>
-            <a href="sair.php" class=text-withe-700 px-4 py-2 rounded-lg transition duration-300 ease-in-out hover:bg-blue-100">
-                Sair
-            </a>
+            <div class="space-x-4">
+                <a href="index.php" class="text-white px-4 py-2 rounded-lg transition duration-300 ease-in-out">
+                    Página Inicial
+                </a>
+                <a href="sair.php" class="text-white px-4 py-2 rounded-lg transition duration-300 ease-in-out hover:bg-red-600">
+                    Sair
+                </a>
+            </div>
         </div>
 
         <div class="bg-white p-6 rounded-lg shadow-lg overflow-x-auto">
+            <div class="mb-4 flex justify-end">
+                <a href="CUser.php" class="bg-blue-500 text-white px-4 py-2 rounded-lg transition duration-300 ease-in-out hover:bg-blue-600">
+                    Novo Usuário
+                </a>
+            </div>
             <table class="min-w-full bg-white border border-gray-200 rounded-lg">
                 <thead class="bg-gray-50">
                     <tr>
                         <th class="py-3 px-6 text-left font-semibold text-gray-700">CPF</th>
                         <th class="py-3 px-6 text-left font-semibold text-gray-700">Nome</th>
-                        <th class="py-3 px-6 text-left font-semibold text-gray-700">Ações</th>
+                        <th class="py-3 px-6 text-center font-semibold text-gray-700">Ações</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -48,13 +58,17 @@ $result = $stmt->get_result();
                             $cpf = htmlspecialchars($row['cpf']);
                             $name = htmlspecialchars($row['name']);
                             echo <<<HTML
-                            <tr class='border-t border-gray-200'>
+                            <tr class='border-t border-gray-200 hover:bg-gray-50'>
                                 <td class='py-3 px-6'>{$cpf}</td>
                                 <td class='py-3 px-6'>{$name}</td>
-                                <td class='py-3 px-6'>
-                                    <form action='alt_user.php' method='POST'>
+                                <td class='py-3 px-6 text-center'>
+                                    <form action='alt_user.php' method='POST' class='inline-block'>
                                         <input type='hidden' name='cpfAnterior' value='{$cpf}'>
-                                        <button type='submit' class='py-2 px-4 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition duration-300'>Alterar</button>
+                                        <button type='submit' class='py-1 px-3 bg-yellow-500 hover:bg-yellow-600 text-white rounded transition duration-300'>Alterar</button>
+                                    </form>
+                                    <form action='del_user.php' method='POST' class='inline-block ml-2'>
+                                        <input type='hidden' name='cpf' value='{$cpf}'>
+                                        <button type='submit' class='py-1 px-3 bg-red-500 hover:bg-red-600 text-white rounded transition duration-300' onclick="return confirm('Tem certeza que deseja excluir este usuário?')">Excluir</button>
                                     </form>
                                 </td>
                             </tr>

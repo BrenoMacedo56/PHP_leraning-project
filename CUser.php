@@ -1,24 +1,34 @@
 <?php
-include("conection.php");
+require_once("conection.php");
+
+if (!$conn || $conn->connect_error) {
+    die("Erro de conexão: " . ($conn ? $conn->connect_error : "Conexão não estabelecida"));
+}
+
+$message = '';
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-
     if (isset($_POST['nome'], $_POST['cpf'], $_POST['senha']) && !empty($_POST['nome']) && !empty($_POST['cpf']) && !empty($_POST['senha'])) {
-        $nome = mysqli_real_escape_string($conn, $_POST['nome']);
-        $cpf = mysqli_real_escape_string($conn, $_POST['cpf']);
-        $senha = mysqli_real_escape_string($conn, $_POST['senha']);
+        $nome = $_POST['nome'];
+        $cpf = $_POST['cpf'];
+        $senha = password_hash($_POST['senha'], PASSWORD_DEFAULT);
 
-        $sql = "INSERT INTO usuarios (cpf, name, password) VALUES ('$cpf', '$nome', '$senha')";
+        $stmt = $conn->prepare("INSERT INTO usuarios (cpf, name, password) VALUES (?, ?, ?)");
+        if (!$stmt) {
+            die("Erro na preparação da consulta: " . $conn->error);
+        }
 
-        if ($conn->query($sql) === TRUE) {
+        $stmt->bind_param("sss", $cpf, $nome, $senha);
 
-            header("Location: CUser.php");
+        if ($stmt->execute()) {
+            header("Location: show_user.php");
             exit();
         } else {
-            echo "<p class='text-red-500 text-center'>Erro ao cadastrar: " . $conn->error . "</p>";
+            $message = "<p class='text-red-500 text-center'>Erro ao cadastrar: " . $stmt->error . "</p>";
         }
+        $stmt->close();
     } else {
-        echo "<p class='text-red-500 text-center'>Por favor, preencha todos os campos.</p>";
+        $message = "<p class='text-red-500 text-center'>Por favor, preencha todos os campos.</p>";
     }
 }
 
@@ -26,7 +36,7 @@ $conn->close();
 ?>
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -34,29 +44,40 @@ $conn->close();
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-100">
-    <div class="container mx-auto mt-10">
-        <h1 class="text-3xl font-bold text-center text-gray-800 mb-8">Cadastrar Novo Usuário</h1>
-        
-        <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-lg mx-auto mb-8">
-            <form method="post" action="show_user.php" class="space-y-4">
-                <!-- Nome Input -->
+    <div class="container mx-auto mt-10 px-4">
+        <!-- Cabeçalho -->
+        <div class="bg-gradient-to-r from-blue-700 via-sky-500 to-gray-600 text-white p-6 rounded-lg shadow-lg mb-6 flex justify-between items-center">
+            <h1 class="text-3xl font-bold">Cadastrar Novo Usuário</h1>
+            <a href="show_user.php" class="text-white-700 px-4 py-2 rounded-lg transition duration-300 ease-in-out hover:bg-blue-100">
+                Voltar
+            </a>
+        </div>
+
+        <?php
+        if ($message) {
+            echo "<div class='mb-4'>$message</div>";
+        }
+        ?>
+
+        <!-- Formulário -->
+        <div class="bg-white p-6 rounded-lg shadow-lg">
+            <form method="post" action="" class="space-y-4">
                 <div>
-                    <label for="nome" class="block text-sm font-medium text-gray-700">Nome</label>
-                    <input type="text" name="nome" id="nome" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring focus:ring-blue-200" placeholder="Digite seu nome" required>
+                    <label for="nome" class="block text-gray-700 text-sm font-bold mb-2">Nome</label>
+                    <input type="text" name="nome" id="nome" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Digite seu nome" required>
                 </div>
-                <!-- CPF Input -->
                 <div>
-                    <label for="cpf" class="block text-sm font-medium text-gray-700">CPF</label>
-                    <input type="text" name="cpf" id="cpf" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring focus:ring-blue-200" placeholder="Digite seu CPF" required>
+                    <label for="cpf" class="block text-gray-700 text-sm font-bold mb-2">CPF</label>
+                    <input type="text" name="cpf" id="cpf" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Digite seu CPF" required>
                 </div>
-                <!-- Senha Input -->
                 <div>
-                    <label for="senha" class="block text-sm font-medium text-gray-700">Senha</label>
-                    <input type="password" name="senha" id="senha" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring focus:ring-blue-200" placeholder="Digite sua senha" required>
+                    <label for="senha" class="block text-gray-700 text-sm font-bold mb-2">Senha</label>
+                    <input type="password" name="senha" id="senha" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Digite sua senha" required>
                 </div>
-                <!-- Botão de Cadastro -->
-                <div>
-                    <button type="submit" class="w-full py-2 px-4 bg-green-500 text-white rounded-lg hover:bg-green-600">Cadastrar</button>
+                <div class="flex justify-end">
+                    <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300">
+                        Cadastrar
+                    </button>
                 </div>
             </form>
         </div>

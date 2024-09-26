@@ -35,7 +35,7 @@ if (!$user) {
         <!-- Cabeçalho -->
         <div class="bg-gradient-to-r from-blue-700 via-sky-500 to-gray-600 text-white p-6 rounded-lg shadow-lg mb-6 flex justify-between items-center">
             <h1 class="text-3xl font-bold">Alterar Usuário</h1>
-            <a href="show_user.php" class="bg-white text-blue-700 px-4 py-2 rounded-lg transition duration-300 ease-in-out hover:bg-blue-100">
+            <a href="show_user.php" class="text-white-700 px-4 py-2 rounded-lg transition duration-300 ease-in-out hover:bg-blue-100">
                 Voltar
             </a>
         </div>
