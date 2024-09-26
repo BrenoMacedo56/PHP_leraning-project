@@ -1,14 +1,27 @@
 <?php
-include("conection.php");
+require_once("conection.php");
 
-$cpfAnterior = $_POST['cpfAnterior'];
+if (!$conn || $conn->connect_error) {
+    die("Erro de conexão: " . ($conn ? $conn->connect_error : "Conexão não estabelecida"));
+}
 
-$sql = "SELECT cpf, name FROM usuarios WHERE cpf = '$cpfAnterior'";
-$result = $conn->query($sql);
+$cpfAnterior = isset($_POST['cpfAnterior']) ? $_POST['cpfAnterior'] : '';
+
+$stmt = $conn->prepare("SELECT cpf, name FROM usuarios WHERE cpf = ?");
+if (!$stmt) {
+    die("Erro na preparação da consulta: " . $conn->error);
+}
+
+$stmt->bind_param("s", $cpfAnterior);
+$stmt->execute();
+$result = $stmt->get_result();
 $user = $result->fetch_assoc();
 
-?>
+if (!$user) {
+    die("Usuário não encontrado.");
+}
 
+?>
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -18,31 +31,38 @@ $user = $result->fetch_assoc();
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-100">
-    <div class="container mx-auto mt-10">
-        <h1 class="text-3xl font-bold text-center text-gray-800 mb-8">Alterar Usuário</h1>
+    <div class="container mx-auto mt-10 px-4">
+        <!-- Cabeçalho -->
+        <div class="bg-gradient-to-r from-blue-700 via-sky-500 to-gray-600 text-white p-6 rounded-lg shadow-lg mb-6 flex justify-between items-center">
+            <h1 class="text-3xl font-bold">Alterar Usuário</h1>
+            <a href="show_user.php" class="bg-white text-blue-700 px-4 py-2 rounded-lg transition duration-300 ease-in-out hover:bg-blue-100">
+                Voltar
+            </a>
+        </div>
 
-        <div class="w-full max-w-md mx-auto bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
-            <form action="show_user.php" method="POST">
+        <!-- Formulário -->
+        <div class="bg-white p-6 rounded-lg shadow-lg">
+            <form action="update_user.php" method="POST" class="space-y-4">
                 <input type="hidden" name="cpfAnterior" value="<?php echo htmlspecialchars($user['cpf']); ?>">
 
-                <div class="mb-4">
+                <div>
                     <label class="block text-gray-700 text-sm font-bold mb-2" for="cpf">CPF:</label>
-                    <input type="text" name="cpf" value="<?php echo htmlspecialchars($user['cpf']); ?>" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                    <input type="text" id="cpf" name="cpf" value="<?php echo htmlspecialchars($user['cpf']); ?>" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
 
-                <div class="mb-4">
+                <div>
                     <label class="block text-gray-700 text-sm font-bold mb-2" for="name">Nome:</label>
-                    <input type="text" name="nome" value="<?php echo htmlspecialchars($user['name']); ?>" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                    <input type="text" id="name" name="nome" value="<?php echo htmlspecialchars($user['name']); ?>" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
 
-                <div class="mb-4">
+                <div>
                     <label class="block text-gray-700 text-sm font-bold mb-2" for="senha">Senha:</label>
-                    <input type="password" name="senha" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                    <input type="password" id="senha" name="senha" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
 
-                <div class="flex items-center justify-between">
-                    <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
-                        Salvar
+                <div class="flex justify-end">
+                    <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300">
+                        Salvar Alterações
                     </button>
                 </div>
             </form>
