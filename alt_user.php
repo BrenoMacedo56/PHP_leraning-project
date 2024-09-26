@@ -5,22 +5,65 @@ if (!$conn || $conn->connect_error) {
     die("Erro de conexão: " . ($conn ? $conn->connect_error : "Conexão não estabelecida"));
 }
 
-$cpfAnterior = isset($_POST['cpfAnterior']) ? $_POST['cpfAnterior'] : '';
 
-$stmt = $conn->prepare("SELECT cpf, name FROM usuarios WHERE cpf = ?");
-if (!$stmt) {
-    die("Erro na preparação da consulta: " . $conn->error);
+$cpfAnterior = isset($_POST['cpfAnterior']) ? $_POST['cpfAnterior'] : (isset($_GET['cpfAnterior']) ? $_GET['cpfAnterior'] : '');
+
+
+if (empty($cpfAnterior)) {
+    die("CPF anterior não fornecido.");
 }
 
-$stmt->bind_param("s", $cpfAnterior);
-$stmt->execute();
-$result = $stmt->get_result();
-$user = $result->fetch_assoc();
 
-if (!$user) {
-    die("Usuário não encontrado.");
+if (isset($_POST['cpf'], $_POST['name'])) {
+
+    $cpf = $_POST['cpf'];
+    $nome = $_POST['name'];
+    $senha = !empty($_POST['password']) ? password_hash($_POST['password'], PASSWORD_DEFAULT) : null; // Hash da nova senha, se informada
+
+
+    if ($senha) {
+
+        $stmt = $conn->prepare("UPDATE usuarios SET cpf = ?, name = ?, password = ? WHERE cpf = ?");
+        $stmt->bind_param("ssss", $cpf, $name, $password, $cpfAnterior);
+    } else {
+     
+        $stmt = $conn->prepare("UPDATE usuarios SET cpf = ?, name = ? WHERE cpf = ?");
+        $stmt->bind_param("sss", $cpf, $nome, $cpfAnterior);
+    }
+
+    if (!$stmt) {
+        die("Erro na preparação da consulta: " . $conn->error);
+    }
+
+
+    if ($stmt->execute()) {
+        header("Location: show_user.php?message=Usuário atualizado com sucesso&status=success");
+        exit();
+    } else {
+        $error = "Erro ao atualizar usuário: " . $stmt->error;
+    }
+
+    $stmt->close();
+} else {
+
+    $stmt = $conn->prepare("SELECT cpf, name FROM usuarios WHERE cpf = ?");
+    if (!$stmt) {
+        die("Erro na preparação da consulta: " . $conn->error);
+    }
+
+    $stmt->bind_param("s", $cpfAnterior);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $user = $result->fetch_assoc();
+
+    if (!$user) {
+        die("Usuário não encontrado.");
+    }
+
+    $stmt->close();
 }
 
+$conn->close();
 ?>
 <!DOCTYPE html>
 <html lang="pt-br">
@@ -35,14 +78,21 @@ if (!$user) {
         <!-- Cabeçalho -->
         <div class="bg-gradient-to-r from-blue-700 via-sky-500 to-gray-600 text-white p-6 rounded-lg shadow-lg mb-6 flex justify-between items-center">
             <h1 class="text-3xl font-bold">Alterar Usuário</h1>
-            <a href="show_user.php" class="text-white-700 px-4 py-2 rounded-lg transition duration-300 ease-in-out hover:bg-blue-100">
+            <a href="show_user.php" class="text-white px-4 py-2 rounded-lg transition duration-300 ease-in-out hover:bg-blue-600">
                 Voltar
             </a>
         </div>
 
+        <?php if (isset($error)): ?>
+            <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4" role="alert">
+                <p><?php echo $error; ?></p>
+            </div>
+        <?php endif; ?>
+
         <!-- Formulário -->
         <div class="bg-white p-6 rounded-lg shadow-lg">
-            <form action="update_user.php" method="POST" class="space-y-4">
+            <form action="alt_user.php" method="POST" class="space-y-4">
+                <!-- CPF Anterior - Campo oculto -->
                 <input type="hidden" name="cpfAnterior" value="<?php echo htmlspecialchars($user['cpf']); ?>">
 
                 <div>
@@ -52,12 +102,12 @@ if (!$user) {
 
                 <div>
                     <label class="block text-gray-700 text-sm font-bold mb-2" for="name">Nome:</label>
-                    <input type="text" id="name" name="nome" value="<?php echo htmlspecialchars($user['name']); ?>" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <input type="text" id="name" name="name" value="<?php echo htmlspecialchars($user['name']); ?>" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
 
                 <div>
                     <label class="block text-gray-700 text-sm font-bold mb-2" for="senha">Senha:</label>
-                    <input type="password" id="senha" name="senha" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <input type="password" id="senha" name="password" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
 
                 <div class="flex justify-end">
