@@ -5,28 +5,29 @@ if (!$conn || $conn->connect_error) {
     die("Erro de conexão: " . ($conn ? $conn->connect_error : "Conexão não estabelecida"));
 }
 
-
 $cpfAnterior = isset($_POST['cpfAnterior']) ? $_POST['cpfAnterior'] : (isset($_GET['cpfAnterior']) ? $_GET['cpfAnterior'] : '');
-
 
 if (empty($cpfAnterior)) {
     die("CPF anterior não fornecido.");
 }
 
-
 if (isset($_POST['cpf'], $_POST['name'])) {
-
     $cpf = $_POST['cpf'];
     $nome = $_POST['name'];
-    $senha = !empty($_POST['password']) ? password_hash($_POST['password'], PASSWORD_DEFAULT) : null; // Hash da nova senha, se informada
+    $senha = !empty($_POST['password']) ? $_POST['password'] : null;
 
+    // Verifica se a senha atende aos critérios
+    if ($senha && !preg_match('/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/', $senha)) {
+        die("Erro: A senha deve conter pelo menos uma letra maiúscula, uma letra minúscula, um número, um caractere especial e ter no mínimo 8 caracteres.");
+    }
+
+    // Hash da senha se estiver preenchida
+    $senha = $senha ? password_hash($senha, PASSWORD_DEFAULT) : null;
 
     if ($senha) {
-
         $stmt = $conn->prepare("UPDATE usuarios SET cpf = ?, name = ?, password = ? WHERE cpf = ?");
-        $stmt->bind_param("ssss", $cpf, $name, $password, $cpfAnterior);
+        $stmt->bind_param("ssss", $cpf, $nome, $senha, $cpfAnterior);
     } else {
-     
         $stmt = $conn->prepare("UPDATE usuarios SET cpf = ?, name = ? WHERE cpf = ?");
         $stmt->bind_param("sss", $cpf, $nome, $cpfAnterior);
     }
@@ -34,7 +35,6 @@ if (isset($_POST['cpf'], $_POST['name'])) {
     if (!$stmt) {
         die("Erro na preparação da consulta: " . $conn->error);
     }
-
 
     if ($stmt->execute()) {
         header("Location: show_user.php?message=Usuário atualizado com sucesso&status=success");
@@ -45,7 +45,6 @@ if (isset($_POST['cpf'], $_POST['name'])) {
 
     $stmt->close();
 } else {
-
     $stmt = $conn->prepare("SELECT cpf, name FROM usuarios WHERE cpf = ?");
     if (!$stmt) {
         die("Erro na preparação da consulta: " . $conn->error);
@@ -65,6 +64,7 @@ if (isset($_POST['cpf'], $_POST['name'])) {
 
 $conn->close();
 ?>
+
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -72,10 +72,38 @@ $conn->close();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Alterar Usuário</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        function validarFormulario() {
+            const senha = document.getElementById('senha').value;
+            const regexSenha = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+
+            if (senha && !regexSenha.test(senha)) {
+                alert('A senha deve conter pelo menos uma letra maiúscula, uma letra minúscula, um número, um caractere especial e ter no mínimo 8 caracteres.');
+                return false;
+            }
+
+            const cpf = document.getElementById('cpf').value;
+            const cpfAnterior = document.querySelector('input[name="cpfAnterior"]').value;
+
+            // Verifica CPF via AJAX
+            return fetch(`check_cpf.php?cpf=${cpf}&cpfAnterior=${cpfAnterior}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.exists) {
+                        alert('Erro: O CPF informado já existe.');
+                        return false;
+                    }
+                    return true;
+                })
+                .catch(error => {
+                    console.error('Erro na verificação do CPF:', error);
+                    return false;
+                });
+        }
+    </script>
 </head>
 <body class="bg-gray-100">
     <div class="container mx-auto mt-10 px-4">
-        <!-- Cabeçalho -->
         <div class="bg-gradient-to-r from-blue-700 via-sky-500 to-gray-600 text-white p-6 rounded-lg shadow-lg mb-6 flex justify-between items-center">
             <h1 class="text-3xl font-bold">Alterar Usuário</h1>
             <a href="show_user.php" class="text-white px-4 py-2 rounded-lg transition duration-300 ease-in-out hover:bg-blue-600">
@@ -89,10 +117,8 @@ $conn->close();
             </div>
         <?php endif; ?>
 
-        <!-- Formulário -->
         <div class="bg-white p-6 rounded-lg shadow-lg">
-            <form action="alt_user.php" method="POST" class="space-y-4">
-                <!-- CPF Anterior - Campo oculto -->
+            <form action="alt_user.php" method="POST" class="space-y-4" onsubmit="return validarFormulario()">
                 <input type="hidden" name="cpfAnterior" value="<?php echo htmlspecialchars($user['cpf']); ?>">
 
                 <div>

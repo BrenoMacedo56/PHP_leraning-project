@@ -5,8 +5,6 @@ if (!$conn || $conn->connect_error) {
     die("Erro de conexão: " . ($conn ? $conn->connect_error : "Conexão não estabelecida"));
 }
 
-
-
 $sql = "SELECT cpf, name FROM usuarios";
 $stmt = $conn->prepare($sql);
 if (!$stmt) {
@@ -15,7 +13,6 @@ if (!$stmt) {
 
 $stmt->execute();
 $result = $stmt->get_result();
-
 ?>
 <!DOCTYPE html>
 <html lang="pt-br">
@@ -78,18 +75,12 @@ $result = $stmt->get_result();
                                 <td class='py-3 px-6'>{$cpf}</td>
                                 <td class='py-3 px-6'>{$name}</td>
                                 <td class='py-3 px-6 text-center'>
-                                    <form action='alt_user.php' method='POST' class='inline-block'>
-                                        <input type='hidden' name='cpf' value='{$cpf}'>
-                                        <input type='hidden' name='name' value='{$name}'>
-                                        <input type='hidden' name='password' value='{$password}'>
-                                        <input type='hidden' name='cpfAnterior' value='{$cpf}'>
-                                        <button type='submit' class='py-1 px-3 bg-yellow-500 hover:bg-yellow-600 text-white rounded transition duration-300'>Alterar</button>
-                                    </form>
-                                    <form action='del_user.php' method='POST' class='inline-block ml-2'>
-                                        <input type='hidden' name='cpf' value='{$cpf}'>
-                                        <input type='hidden' name='name' value='{$name}'>
-                                        <button type='submit' class='bg-red-500 py-1 px-3 text-white rounded transition duration-300' onclick="return confirm('Tem certeza que deseja excluir este usuário?')">Excluir</button>
-                                    </form>
+                                    <a href='alt_user.php?cpfAnterior={$cpf}' class='py-1 px-3 bg-yellow-500 hover:bg-yellow-600 text-white rounded transition duration-300'>
+                                        Alterar
+                                    </a>
+                                    <a href='del_user.php?cpf={$cpf}' class='bg-red-500 py-1 px-3 text-white rounded transition duration-300 ml-2' onclick="return confirm('Tem certeza que deseja excluir este usuário?')">
+                                        Excluir
+                                    </a>
                                 </td>
                             </tr>
                             HTML;

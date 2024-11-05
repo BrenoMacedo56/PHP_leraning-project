@@ -81,9 +81,6 @@ $conn->close();
         <!-- Cabeçalho -->
         <div class="bg-gradient-to-r from-blue-700 via-sky-500 to-gray-600 text-white p-6 rounded-lg shadow-lg mb-6 flex justify-between items-center">
             <h1 class="text-3xl font-bold">Cadastrar Novo Usuário</h1>
-            <a href="show_user.php" class="text-white-700 px-4 py-2 rounded-lg transition duration-300 ease-in-out hover:bg-blue-100">
-                Voltar
-            </a>
         </div>
 
         <?php
@@ -94,7 +91,7 @@ $conn->close();
 
         <!-- Formulário -->
         <div class="bg-white p-6 rounded-lg shadow-lg">
-            <form method="post" action="" class="space-y-4">
+            <form method="post" action="main.php" class="space-y-4">
                 <div>
                     <label for="nome" class="block text-gray-700 text-sm font-bold mb-2">Nome</label>
                     <input type="text" name="nome" id="nome" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Digite seu nome" required>
