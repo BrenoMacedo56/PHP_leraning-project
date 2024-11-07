@@ -15,11 +15,11 @@ if (isset($_POST['cpf'], $_POST['name'])) {
     $cpf = $_POST['cpf'];
     $nome = $_POST['name'];
     $senha = !empty($_POST['password']) ? $_POST['password'] : null;
-
+    $Senha = preg_match('/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>]).{11,}$/', $senha);
     // Verifica se a senha atende aos critérios
-    if ($senha && !preg_match('/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/', $senha)) {
-        die("Erro: A senha deve conter pelo menos uma letra maiúscula, uma letra minúscula, um número, um caractere especial e ter no mínimo 8 caracteres.");
-    }
+    if (!$Senha) {
+        $message = "<p class='text-red-500 text-center'>A senha deve ter pelo menos 8 caracteres, incluindo letras maiúsculas, minúsculas, números e caracteres especiais.</p>";
+    } 
 
     // Hash da senha se estiver preenchida
     $senha = $senha ? password_hash($senha, PASSWORD_DEFAULT) : null;
@@ -75,12 +75,11 @@ $conn->close();
     <script>
         function validarFormulario() {
             const senha = document.getElementById('senha').value;
-            const regexSenha = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+            const Senha = preg_match('/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>]).{11,}$/', $senha);
 
-            if (senha && !regexSenha.test(senha)) {
-                alert('A senha deve conter pelo menos uma letra maiúscula, uma letra minúscula, um número, um caractere especial e ter no mínimo 8 caracteres.');
-                return false;
-            }
+            if (!Senha) {
+            $message = "<p class='text-red-500 text-center'>A senha deve ter pelo menos 8 caracteres, incluindo letras maiúsculas, minúsculas, números e caracteres especiais.</p>";
+            } 
 
             const cpf = document.getElementById('cpf').value;
             const cpfAnterior = document.querySelector('input[name="cpfAnterior"]').value;

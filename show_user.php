@@ -41,7 +41,7 @@ $result = $stmt->get_result();
         <div class="bg-gradient-to-r from-blue-700 via-sky-500 to-gray-600 text-white p-6 rounded-lg shadow-lg mb-6 flex justify-between items-center">
             <h1 class="text-3xl font-bold">Usuários Cadastrados</h1>
             <div class="space-x-4">
-                <a href="index.php" class="text-white px-4 py-2 rounded-lg transition duration-300 ease-in-out hover:bg-green-600">
+                <a href="main.php" class="text-white px-4 py-2 rounded-lg transition duration-300 ease-in-out hover:bg-green-600">
                     Página Inicial
                 </a>
                 <a href="sair.php" class="text-white px-4 py-2 rounded-lg transition duration-300 ease-in-out hover:bg-red-600">

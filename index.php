@@ -7,34 +7,26 @@ $message = '';
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if (isset($_POST['cpf'], $_POST['password']) && !empty($_POST['cpf']) && !empty($_POST['password'])) {
         $cpf = trim($_POST['cpf']);
-        $password = $_POST['password'];
+        $password = trim($_POST['password']); // Adicionado trim() para remover espaços
 
-        // Verifica se o CPF existe no banco
-        $stmt = $conn->prepare("SELECT cpf, password FROM usuarios WHERE cpf = ?");
+        $stmt = $conn->prepare("SELECT * FROM usuarios WHERE cpf = ? AND password = ?");
         if (!$stmt) {
             die("Erro na preparação da consulta: " . $conn->error);
         }
         
-        $stmt->bind_param("s", $cpf);
+        $stmt->bind_param("ss", $cpf, $password);
         $stmt->execute();
         $result = $stmt->get_result();
         
         if ($result->num_rows > 0) {
-            $user = $result->fetch_assoc();
-            
-            // Verifica a senha
-            if (password_verify($password, $user['password'])) {
                 $_SESSION['cpf'] = $cpf;
-                header("Location: show_user.php");
+                header("Location: main.php");
                 exit();
             } else {
-                $message = "Senha incorreta!";
+                $message = "Senha incorreta ou CPF incorreto!";
+                header("Location: CUser1.php");
+                exit();
             }
-        } else {
-            // CPF não encontrado
-            header("Location: CUser1.php");
-            exit();
-        }
         
         $stmt->close();
     } else {
@@ -51,7 +43,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <title>Login</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        // Função para mostrar mensagem de erro
         function showError(message) {
             alert(message);
         }
