@@ -69,7 +69,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $_SESSION['user_name'] = $nome;
                 $_SESSION['user_cpf'] = $cpf;
                 
-                header("Location: show_user.php");
+                header("Location: main.php");
                 exit();
             } else {
                 $message = "<p class='text-red-500 text-center'>Erro ao cadastrar: " . htmlspecialchars($stmt->error) . "</p>";

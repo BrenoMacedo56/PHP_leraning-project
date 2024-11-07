@@ -1,59 +1,38 @@
 <?php
 require_once("conection.php");
 
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    if (isset($_POST['cpf']) && !empty($_POST['cpf'])) {
-        $cpf = $_POST['cpf'];
-        
-    
-        if (!preg_match("/^\d{3}\.\d{3}\.\d{3}-\d{2}$/", $cpf)) {
-            die("CPF inválido");
-        }
-
-        if (!$conn || $conn->connect_error) {
-            die("Erro de conexão: " . ($conn ? $conn->connect_error : "Conexão não estabelecida"));
-        }
-
-        n
-        $sql = "DELETE FROM usuarios WHERE cpf = ?";
-        $stmt = $conn->prepare($sql);
-
-        if ($stmt) {
-            $stmt->bind_param("s", $cpf);
-            
-            if ($stmt->execute()) {
-                if ($stmt->affected_rows > 0) {
-                  
-                    $message = "Usuário excluído com sucesso.";
-                    $status = "success";
-                } else {
-                    
-                    $message = "Nenhum usuário encontrado com este CPF.";
-                    $status = "warning";
-                }
-            } else {
-               
-                $message = "Erro ao excluir o usuário: " . $stmt->error;
-                $status = "error";
-            }
-
-            $stmt->close();
-        } else {
-       
-            $message = "Erro na preparação da consulta: " . $conn->error;
-            $status = "error";
-        }
-
-        $conn->close();
-    } else {
-        $message = "CPF não fornecido.";
-        $status = "error";
-    }
-} else {
-    $message = "Método de requisição inválido.";
-    $status = "error";
+if (!$conn || $conn->connect_error) {
+    die("Erro de conexão: " . ($conn ? $conn->connect_error : "Conexão não estabelecida"));
 }
 
-header("Location: list_users.php?message=" . urlencode($message) . "&status=" . $status);
-exit();
-?>
+// Verifica se o CPF foi enviado via GET
+if (isset($_GET['cpf'])) {
+    $cpf = $_GET['cpf'];
+
+    // Prepara a instrução SQL para deletar o usuário
+    $stmt = $conn->prepare("DELETE FROM usuarios WHERE cpf = ?");
+    if (!$stmt) {
+        die("Erro na preparação da consulta: " . $conn->error);
+    }
+
+    $stmt->bind_param("s", $cpf);
+
+    // Executa a consulta e verifica se a exclusão foi bem-sucedida
+    if ($stmt->execute()) {
+        $stmt->close();
+        $conn->close();
+        header("Location: show_user.php?message=Usuário excluído com sucesso&status=success");
+        exit();
+    } else {
+        $error = "Erro ao excluir usuário: " . $stmt->error;
+        $stmt->close();
+        $conn->close();
+        header("Location: show_user.php?message=" . urlencode($error) . "&status=error");
+        exit();
+    }
+} else {
+    // Caso o CPF não tenha sido enviado, redireciona com uma mensagem de erro
+    $conn->close();
+    header("Location: show_user.php?message=CPF não fornecido para exclusão&status=error");
+    exit();
+}
