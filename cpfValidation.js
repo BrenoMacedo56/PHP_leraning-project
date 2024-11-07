@@ -4,7 +4,7 @@ function validateCPF(cpf) {
     // Verifica se o CPF tem 11 dígitos
     if (cpf.length !== 11) {
         return false;
-    }
+    }a
 
     // Verifica se todos os dígitos são iguais, como "11111111111"
     if (/^(\d)\1+$/.test(cpf)) {
