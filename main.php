@@ -1,11 +1,6 @@
+
 <?php
-
 session_start();
-if (!isset($_SESSION["cpf"]) || !isset($_SESSION["name"])) {
-    header("Location: login.php");
-    exit();
-}
-
 ?>
 
 <!DOCTYPE html>
@@ -19,9 +14,9 @@ if (!isset($_SESSION["cpf"]) || !isset($_SESSION["name"])) {
 </head>
 
 <body class="bg-gray-100">
- 
+
     <div class="container mx-auto mt-10">
- 
+
         <div class="bg-gradient-to-r from-blue-700 via-sky-500 to-gray-600 text-white p-6 rounded-lg shadow-lg mb-6 flex justify-between items-center">
             <h1 class="text-3xl font-bold">Página Principal</h1>
             <a href="sair.php" class="text-white px-4 py-2 rounded-lg transition duration-300 ease-in-out">
@@ -30,7 +25,7 @@ if (!isset($_SESSION["cpf"]) || !isset($_SESSION["name"])) {
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
-         
+
             <div class="col-span-1 bg-gray-200 p-6 rounded-lg shadow-md">
                 <h2 class="text-xl font-bold mb-4">Menu</h2>
                 <ul class="space-y-4">
@@ -49,10 +44,19 @@ if (!isset($_SESSION["cpf"]) || !isset($_SESSION["name"])) {
                             Mostrar Usuário
                         </a>
                     </li>
+                    <li>
+                        <a href="./show_filme.php" class="text-blue-600 hover:text-blue-800 transition duration-200">
+                            Mostrar Filmes
+                        </a>
+                    </li>
+                    <li>
+                        <a href="./CD_filme.php" class="text-blue-600 hover:text-blue-800 transition duration-200">
+                            Cadastrar Filmes
+                        </a>
+                    </li>
                 </ul>
             </div>
 
-    
             <div class="col-span-1 lg:col-span-3 bg-white p-6 rounded-lg shadow-md">
                 <h2 class="text-2xl font-bold mb-4">Conteúdo Principal</h2>
                 <p class="mb-6">Esse é o conteúdo principal da página.</p>
@@ -69,4 +73,3 @@ if (!isset($_SESSION["cpf"]) || !isset($_SESSION["name"])) {
 </body>
 
 </html>
-
