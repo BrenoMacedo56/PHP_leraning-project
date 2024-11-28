@@ -1,8 +1,62 @@
 <?php
 require_once("conection.php");
 
+$message = '';
+
 if (!$conn || $conn->connect_error) {
     die("Erro de conexão: " . ($conn ? $conn->connect_error : "Conexão não estabelecida"));
+}
+
+function validarCPF($cpf) {
+    $cpf = preg_replace('/[^0-9]/i', '', $cpf);
+    
+    if (strlen($cpf) != 11) {
+        return false;
+    }
+
+    if (preg_match('/(\d)\1{10}/', $cpf)) {
+        return false;
+    }
+
+    for ($t = 9; $t < 11; $t++) {
+        for ($d = 0, $c = 0; $c < $t; $c++) {
+            $d += $cpf[$c] * (($t + 1) - $c);
+        }
+        $d = ((10 * $d) % 11) % 10;
+        if ($cpf[$c] != $d) {
+            return false;
+        }
+    }
+    return true;
+}
+
+function validarSenha($senha) {
+    // Verifica o comprimento mínimo
+    if (strlen($senha) < 8) {
+        return "A senha deve ter pelo menos 8 caracteres.";
+    }
+
+    // Verifica letra maiúscula
+    if (!preg_match('/[A-Z]/', $senha)) {
+        return "A senha deve conter pelo menos uma letra maiúscula.";
+    }
+
+    // Verifica letra minúscula
+    if (!preg_match('/[a-z]/', $senha)) {
+        return "A senha deve conter pelo menos uma letra minúscula.";
+    }
+
+    // Verifica número
+    if (!preg_match('/[0-9]/', $senha)) {
+        return "A senha deve conter pelo menos um número.";
+    }
+
+    // Verifica caractere especial
+    if (!preg_match('/[!@#$%^&*()\-_=+{};:,<.>]/', $senha)) {
+        return "A senha deve conter pelo menos um caractere especial (!@#$%^&*()-_=+{};:,<.>).";
+    }
+
+    return true;
 }
 
 $cpfAnterior = isset($_POST['cpfAnterior']) ? $_POST['cpfAnterior'] : (isset($_GET['cpfAnterior']) ? $_GET['cpfAnterior'] : '');
@@ -12,38 +66,47 @@ if (empty($cpfAnterior)) {
 }
 
 if (isset($_POST['cpf'], $_POST['name'])) {
-    $cpf = $_POST['cpf'];
-    $nome = $_POST['name'];
-    $senha = !empty($_POST['password']) ? $_POST['password'] : null;
-    $Senha = preg_match('/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>]).{11,}$/', $senha);
-    // Verifica se a senha atende aos critérios
-    if (!$Senha) {
-        $message = "<p class='text-red-500 text-center'>A senha deve ter pelo menos 8 caracteres, incluindo letras maiúsculas, minúsculas, números e caracteres especiais.</p>";
-    } 
+    $cpf = preg_replace('/[^0-9]/', '', $_POST['cpf']);
+    $nome = trim($_POST['name']);
+    $senha = $_POST['password'];
 
-    // Hash da senha se estiver preenchida
-    $senha = $senha ? password_hash($senha, PASSWORD_DEFAULT) : null;
-
-    if ($senha) {
-        $stmt = $conn->prepare("UPDATE usuarios SET cpf = ?, name = ?, password = ? WHERE cpf = ?");
-        $stmt->bind_param("ssss", $cpf, $nome, $senha, $cpfAnterior);
+    // Validação da senha
+    if (empty($senha)) {
+        $error = "A senha é obrigatória.";
     } else {
-        $stmt = $conn->prepare("UPDATE usuarios SET cpf = ?, name = ? WHERE cpf = ?");
-        $stmt->bind_param("sss", $cpf, $nome, $cpfAnterior);
-    }
+        $validacaoSenha = validarSenha($senha);
+        if ($validacaoSenha !== true) {
+            $error = $validacaoSenha;
+        } else if (!validarCPF($cpf)) {
+            $error = "CPF inválido. Por favor, insira um CPF válido.";
+        } else {
+            $stmt = $conn->prepare("SELECT cpf FROM usuarios WHERE cpf = ? AND cpf != ?");
+            $stmt->bind_param("ss", $cpf, $cpfAnterior);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            
+            if ($result->num_rows > 0) {
+                $error = "O CPF informado já existe no sistema.";
+            } else {
+                $senhaHash = password_hash($senha, PASSWORD_DEFAULT);
+                
+                $stmt = $conn->prepare("UPDATE usuarios SET cpf = ?, name = ?, password = ? WHERE cpf = ?");
+                $stmt->bind_param("ssss", $cpf, $nome, $senhaHash, $cpfAnterior);
 
-    if (!$stmt) {
-        die("Erro na preparação da consulta: " . $conn->error);
+                if (!$stmt) {
+                    $error = "Erro na preparação da consulta: " . $conn->error;
+                } else {
+                    if ($stmt->execute()) {
+                        header("Location: show_user.php?message=Usuário atualizado com sucesso&status=success");
+                        exit();
+                    } else {
+                        $error = "Erro ao atualizar usuário: " . $stmt->error;
+                    }
+                }
+            }
+            $stmt->close();
+        }
     }
-
-    if ($stmt->execute()) {
-        header("Location: show_user.php?message=Usuário atualizado com sucesso&status=success");
-        exit();
-    } else {
-        $error = "Erro ao atualizar usuário: " . $stmt->error;
-    }
-
-    $stmt->close();
 } else {
     $stmt = $conn->prepare("SELECT cpf, name FROM usuarios WHERE cpf = ?");
     if (!$stmt) {
@@ -73,32 +136,62 @@ $conn->close();
     <title>Alterar Usuário</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
+        function formatarCPF(campo) {
+            let cpf = campo.value.replace(/\D/g, '');
+            if (cpf.length <= 11) {
+                cpf = cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
+                campo.value = cpf;
+            }
+        }
+
         function validarFormulario() {
             const senha = document.getElementById('senha').value;
-            const Senha = preg_match('/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>]).{11,}$/', $senha);
+            const cpf = document.getElementById('cpf').value.replace(/\D/g, '');
+            
+            if (!senha) {
+                alert('A senha é obrigatória.');
+                return false;
+            }
 
-            if (!Senha) {
-            $message = "<p class='text-red-500 text-center'>A senha deve ter pelo menos 8 caracteres, incluindo letras maiúsculas, minúsculas, números e caracteres especiais.</p>";
-            } 
+            if (senha.length < 8) {
+                alert('A senha deve ter pelo menos 8 caracteres.');
+                return false;
+            }
 
-            const cpf = document.getElementById('cpf').value;
-            const cpfAnterior = document.querySelector('input[name="cpfAnterior"]').value;
+            if (!/[A-Z]/.test(senha)) {
+                alert('A senha deve conter pelo menos uma letra maiúscula.');
+                return false;
+            }
 
-            // Verifica CPF via AJAX
-            return fetch(`check_cpf.php?cpf=${cpf}&cpfAnterior=${cpfAnterior}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.exists) {
-                        alert('Erro: O CPF informado já existe.');
-                        return false;
-                    }
-                    return true;
-                })
-                .catch(error => {
-                    console.error('Erro na verificação do CPF:', error);
-                    return false;
-                });
+            if (!/[a-z]/.test(senha)) {
+                alert('A senha deve conter pelo menos uma letra minúscula.');
+                return false;
+            }
+
+            if (!/[0-9]/.test(senha)) {
+                alert('A senha deve conter pelo menos um número.');
+                return false;
+            }
+
+            if (!/[!@#$%^&*()\-_=+{};:,<.>]/.test(senha)) {
+                alert('A senha deve conter pelo menos um caractere especial (!@#$%^&*()-_=+{};:,<.>).');
+                return false;
+            }
+
+            if (cpf.length !== 11) {
+                alert('CPF inválido. Por favor, insira um CPF válido.');
+                return false;
+            }
+
+            return true;
         }
+
+        window.onload = function() {
+            const cpfInput = document.getElementById('cpf');
+            cpfInput.addEventListener('input', function() {
+                formatarCPF(this);
+            });
+        };
     </script>
 </head>
 <body class="bg-gray-100">
@@ -122,17 +215,24 @@ $conn->close();
 
                 <div>
                     <label class="block text-gray-700 text-sm font-bold mb-2" for="cpf">CPF:</label>
-                    <input type="text" id="cpf" name="cpf" value="<?php echo htmlspecialchars($user['cpf']); ?>" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <input type="text" id="cpf" name="cpf" value="<?php echo htmlspecialchars($user['cpf']); ?>" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required maxlength="14">
                 </div>
 
                 <div>
                     <label class="block text-gray-700 text-sm font-bold mb-2" for="name">Nome:</label>
-                    <input type="text" id="name" name="name" value="<?php echo htmlspecialchars($user['name']); ?>" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <input type="text" id="name" name="name" value="<?php echo htmlspecialchars($user['name']); ?>" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
                 </div>
 
                 <div>
                     <label class="block text-gray-700 text-sm font-bold mb-2" for="senha">Senha:</label>
-                    <input type="password" id="senha" name="password" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <input type="password" id="senha" name="password" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                    <ul class="text-sm text-gray-600 mt-1 list-disc list-inside">
+                        <li>Mínimo de 8 caracteres</li>
+                        <li>Pelo menos uma letra maiúscula</li>
+                        <li>Pelo menos uma letra minúscula</li>
+                        <li>Pelo menos um número</li>
+                        <li>Pelo menos um caractere especial (!@#$%^&*()-_=+{};:,<.>)</li>
+                    </ul>
                 </div>
 
                 <div class="flex justify-end">
